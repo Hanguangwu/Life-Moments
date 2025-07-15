@@ -2,48 +2,18 @@
  * 生活片段状态管理
  */
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import type { Moment, CreateMomentRequest, UpdateMomentRequest } from '../types/moment'
 import { SupabaseMomentService } from '../services/moment'
 
-// 缓存键名
-const CACHE_KEY = 'life-moments-data'
-
 export const useMomentStore = defineStore('moment', () => {
-  // 从缓存加载初始状态
-  const loadCachedData = (): {
-    moments: Moment[],
-    currentFilter: 'all' | 'recent' | 'tagged',
-    selectedTags: string[],
-    dateRange: { start: string; end: string } | null
-  } => {
-    try {
-      const cachedData = localStorage.getItem(CACHE_KEY)
-      if (cachedData) {
-        const parsed = JSON.parse(cachedData)
-        console.log('从缓存加载数据:', parsed)
-        return parsed
-      }
-    } catch (error) {
-      console.error('从缓存加载数据失败:', error)
-    }
-    return {
-      moments: [],
-      currentFilter: 'all',
-      selectedTags: [],
-      dateRange: null
-    }
-  }
   
-  // 初始化状态
-  const cachedData = loadCachedData()
-  
-  // 状态
-  const moments = ref<Moment[]>(cachedData.moments)
+  // 状态初始化为空
+  const moments = ref<Moment[]>([])  // 这里初始为空
   const loading = ref(false)
-  const currentFilter = ref<'all' | 'recent' | 'tagged'>(cachedData.currentFilter)
-  const selectedTags = ref<string[]>(cachedData.selectedTags)
-  const dateRange = ref<{ start: string; end: string } | null>(cachedData.dateRange)
+  const currentFilter = ref<'all' | 'recent' | 'tagged'>('all')
+  const selectedTags = ref<string[]>([])
+  const dateRange = ref<{ start: string; end: string } | null>(null)
 
   // 计算属性
   const filteredMoments = computed(() => {
@@ -86,26 +56,21 @@ export const useMomentStore = defineStore('moment', () => {
     })
     return Array.from(tagsSet).sort()
   })
-
-  // 方法
-  const fetchMoments = async (forceRefresh = false) => {
-    // 如果已有缓存数据且不强制刷新，直接使用缓存数据
-    if (moments.value.length > 0 && !forceRefresh) {
-      console.log('使用缓存的生活片段数据:', moments.value.length)
-      return
-    }
-    
+  
+  const fetchMoments = async () => {
     loading.value = true
     try {
+      if (!navigator.onLine && moments.value.length > 0) {
+        loading.value = false
+        return
+      }
       const data = await SupabaseMomentService.getAll()
       moments.value = data
-      console.log('从服务器获取生活片段数据:', data.length)
-      // 手动更新缓存
-      updateCache()
     } catch (error) {
       console.error('获取生活片段失败:', error)
     } finally {
       loading.value = false
+      return filteredMoments
     }
   }
 
@@ -160,7 +125,7 @@ export const useMomentStore = defineStore('moment', () => {
       if (index !== -1) {
         const updatedMoment = await SupabaseMomentService.getById(id)
         if (updatedMoment) {
-          moments.value[index] = updatedMoment
+          moments.value.splice(index, 1, updatedMoment)
         }
       }
       return true
@@ -196,7 +161,7 @@ export const useMomentStore = defineStore('moment', () => {
       if (index !== -1) {
         const updatedMoment = await SupabaseMomentService.getById(momentId)
         if (updatedMoment) {
-          moments.value[index] = updatedMoment
+          moments.value.splice(index, 1, updatedMoment)  // 这里也改成splice
         }
       }
       return true
@@ -233,42 +198,6 @@ export const useMomentStore = defineStore('moment', () => {
     fetchMoments()
   }
 
-  // 监听数据变化，更新缓存
-  watch(
-    [moments, currentFilter, selectedTags, dateRange],
-    () => {
-      try {
-        const dataToCache = {
-          moments: moments.value,
-          currentFilter: currentFilter.value,
-          selectedTags: selectedTags.value,
-          dateRange: dateRange.value
-        }
-        localStorage.setItem(CACHE_KEY, JSON.stringify(dataToCache))
-        console.log('数据已缓存')
-      } catch (error) {
-        console.error('缓存数据失败:', error)
-      }
-    },
-    { deep: true }
-  )
-
-  // 更新缓存的方法
-  const updateCache = () => {
-    try {
-      const dataToCache = {
-        moments: moments.value,
-        currentFilter: currentFilter.value,
-        selectedTags: selectedTags.value,
-        dateRange: dateRange.value
-      }
-      localStorage.setItem(CACHE_KEY, JSON.stringify(dataToCache))
-      console.log('数据已缓存')
-    } catch (error) {
-      console.error('缓存数据失败:', error)
-    }
-  }
-
   return {
     // 状态
     moments,
@@ -293,6 +222,5 @@ export const useMomentStore = defineStore('moment', () => {
     deleteImage,
     setFilter,
     clearFilters,
-    updateCache
   }
 })

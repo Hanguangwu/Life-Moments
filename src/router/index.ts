@@ -3,6 +3,7 @@ import MomentList from '../views/MomentList.vue'
 import Settings from '../views/Settings.vue'
 import Auth from '../views/Auth.vue'
 import { useAuthStore } from '../stores/auth'
+import FollowingView from '../views/FollowingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,6 +24,12 @@ const router = createRouter({
       path: '/moments',
       name: 'moments',
       component: MomentList,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/following',
+      name: 'following',
+      component: FollowingView,
       meta: { requiresAuth: true }
     },
     {

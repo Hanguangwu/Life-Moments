@@ -13,8 +13,19 @@ export interface Moment {
   images: string[]; // 图片URL数组
   image_timestamps: string[]; // 图片时间戳数组，用于删除时定位R2中的文件
   tags: string[];
+  like_count: number;
+  comment_count: number;
+  repost_count: number;
   created_at: string;
   updated_at: string;
+  user_id?: string;
+  user?: {
+    id: string
+    username?: string
+    avatar_url?: string
+  }
+  liked?: boolean;
+  reposted?: boolean;
 }
 
 /**

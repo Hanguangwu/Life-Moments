@@ -36,6 +36,11 @@ const menuItems = [
     icon: Document,
   },
   {
+    index: '/following',
+    title: '关注',
+    icon: Bell,
+  },
+  {
     index: '/settings',
     title: '设置',
     icon: Setting,

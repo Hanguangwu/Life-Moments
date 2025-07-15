@@ -12,6 +12,8 @@ export interface Profile {
   email: string
   username?: string
   avatar_url?: string
+  follower_count?: number
+  following_count?: number
   created_at: string
   updated_at: string
 }
@@ -102,6 +104,8 @@ export class SupabaseProfileService {
       email: data.email,
       username: data.username,
       avatar_url: data.avatar_url,
+      follower_count: data.follower_count || 0,
+      following_count: data.following_count || 0,
       created_at: data.created_at,
       updated_at: data.updated_at
     }

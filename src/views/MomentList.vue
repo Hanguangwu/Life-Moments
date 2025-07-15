@@ -1,198 +1,214 @@
 <template>
   <div class="twitter-container">
-    <!-- 发布区域 -->
-    <div class="compose-area">
-      <div class="compose-header">
-        <div class="compose-tabs">
-          <div class="compose-tab active">为你</div>
-          <div class="compose-tab">关注</div>
-        </div>
-        <div class="filter-icon" @click="showFilterDropdown = !showFilterDropdown">
-          <el-icon><Setting /></el-icon>
-          
-          <!-- 筛选下拉菜单 -->
-          <div v-if="showFilterDropdown" class="filter-dropdown">
-            <div class="filter-header">筛选</div>
-            
-            <div class="filter-section">
-              <div class="filter-label">查看方式</div>
-              <el-radio-group v-model="currentFilter" @change="handleFilterChange">
-                <el-radio label="all">全部</el-radio>
-                <el-radio label="recent">最近30天</el-radio>
-                <el-radio label="tagged">按标签</el-radio>
-              </el-radio-group>
-            </div>
-            
-            <div v-if="currentFilter === 'tagged'" class="filter-section">
-              <div class="filter-label">标签</div>
-              <el-select
-                v-model="selectedTags"
-                multiple
-                placeholder="选择标签"
-                style="width: 100%"
+    <div class="flex">
+      <!-- 左侧主内容区域 -->
+      <div class="flex-1 pr-4">
+        <!-- 发布区域 -->
+        <div class="compose-area">
+          <div class="compose-header">
+            <div class="compose-tabs">
+              <div 
+                class="compose-tab" 
+                :class="{ active: activeTab === 'for-you' }"
+                @click="setActiveTab('for-you')"
               >
-                <el-option
-                  v-for="tag in allTags"
-                  :key="tag"
-                  :label="tag"
-                  :value="tag"
-                />
-              </el-select>
-            </div>
-            
-            <div class="filter-section">
-              <div class="filter-label">日期范围</div>
-              <el-date-picker
-                v-model="localDateRange"
-                type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-              />
-            </div>
-            
-            <div class="filter-actions">
-              <el-button type="primary" @click="applyFilters">应用筛选</el-button>
-              <el-button @click="clearFilters">清除筛选</el-button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="compose-content" @click="showCreateDialog = true">
-        <div class="compose-avatar">
-          <el-avatar :size="48">
-            <el-icon><User /></el-icon>
-          </el-avatar>
-        </div>
-        <div class="compose-input">
-          <div class="compose-placeholder">有什么新鲜事？</div>
-          <div class="compose-actions">
-            <div class="compose-icons">
-              <el-icon><Picture /></el-icon>
-              <el-icon><PriceTag /></el-icon>
-            </div>
-            <el-button type="primary" class="compose-button" round>发布</el-button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 统计信息 -->
-    <div class="stats-bar">
-      <div class="stat-item">
-        <div class="stat-number">{{ totalCount }}</div>
-        <div class="stat-label">总记录</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-number">{{ recentMoments.length }}</div>
-        <div class="stat-label">最近30天</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-number">{{ filteredMoments.length }}</div>
-        <div class="stat-label">当前显示</div>
-      </div>
-    </div>
-
-    <!-- 生活片段列表 -->
-    <div class="tweet-list" v-loading="loading">
-      <div v-if="filteredMoments.length === 0" class="empty-state">
-        <el-empty description="暂无生活片段" />
-      </div>
-      
-      <div v-else>
-        <div
-          v-for="moment in filteredMoments"
-          :key="moment.id"
-          class="tweet"
-        >
-          <div class="tweet-avatar">
-            <el-avatar :size="48">
-              <el-icon><User /></el-icon>
-            </el-avatar>
-          </div>
-          
-          <div class="tweet-content">
-            <div class="tweet-header">
-              <div class="tweet-user">
-                <span class="tweet-name">{{ authStore.user?.email?.split('@')[0] }}</span>
-                <span class="tweet-username">@{{ authStore.user?.email?.split('@')[0] }}</span>
+                为你
               </div>
-              <div class="tweet-time">{{ formatDateTime(moment.created_at) }}</div>
-              <div class="tweet-actions">
-                <el-dropdown trigger="click">
-                  <el-icon class="more-icon"><MoreFilled /></el-icon>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item @click="editMoment(moment)">
-                        <el-icon><Edit /></el-icon> 编辑
-                      </el-dropdown-item>
-                      <el-dropdown-item @click="deleteMoment(moment.id!)">
-                        <el-icon><Delete /></el-icon> 删除
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
+              <div 
+                class="compose-tab" 
+                :class="{ active: activeTab === 'following' }"
+                @click="setActiveTab('following')"
+              >
+                关注
               </div>
             </div>
-            
-            <div class="tweet-title">{{ moment.title }}</div>
-            
-            <div class="tweet-text">{{ moment.content }}</div>
-            
-            <!-- 图片展示 -->
-            <div v-if="moment.images.length > 0" class="tweet-images">
-              <div class="image-grid" :class="'grid-' + moment.images.length">
-                <div
-                  v-for="(image, index) in moment.images"
-                  :key="index"
-                  class="image-item"
-                >
-                  <el-image
-                    :src="image"
-                    :preview-src-list="moment.images"
-                    :initial-index="index"
-                    fit="cover"
-                    class="tweet-image"
+            <div class="filter-icon" @click="showFilterDropdown = !showFilterDropdown">
+              <el-icon><Setting /></el-icon>
+              
+              <!-- 筛选下拉菜单 -->
+              <div v-if="showFilterDropdown" class="filter-dropdown">
+                <div class="filter-header">筛选生活片段</div>
+                
+                <div class="filter-section">
+                  <div class="filter-label">按标签筛选</div>
+                  <el-select
+                    v-model="selectedTags"
+                    multiple
+                    filterable
+                    allow-create
+                    default-first-option
+                    placeholder="选择或输入标签"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="tag in availableTags"
+                      :key="tag"
+                      :label="tag"
+                      :value="tag"
+                    />
+                  </el-select>
+                </div>
+                
+                <div class="filter-section">
+                  <div class="filter-label">按日期范围筛选</div>
+                  <el-date-picker
+                    v-model="localDateRange"
+                    type="daterange"
+                    range-separator="至"
+                    start-placeholder="开始日期"
+                    end-placeholder="结束日期"
+                    format="YYYY-MM-DD"
+                    style="width: 100%"
                   />
-                  <div class="image-overlay">
-                    <el-button
-                      size="small"
-                      type="danger"
-                      circle
-                      @click="deleteImage(moment.id!, index)"
-                    >
-                      <el-icon><Delete /></el-icon>
-                    </el-button>
-                  </div>
+                </div>
+                
+                <div class="filter-actions">
+                  <el-button @click="clearFilters">清除筛选</el-button>
+                  <el-button type="primary" @click="applyFilters">应用</el-button>
                 </div>
               </div>
             </div>
-            
-            <!-- 标签和日期 -->
-            <div class="tweet-meta">
-              <div class="tweet-date">
-                <el-icon><Calendar /></el-icon>
-                {{ formatDate(moment.date) }}
+          </div>
+          
+          <div class="compose-content" @click="showCreateDialog = true">
+            <div class="compose-avatar">
+              <el-avatar :size="48" :src="profileStore.avatarUrl">
+                <el-icon><User /></el-icon>
+              </el-avatar>
+            </div>
+            <div class="compose-input">
+              <div class="compose-placeholder">发生了什么？</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 统计信息 -->
+        <div class="stats-bar">
+          <div class="stat-item">
+            <div class="stat-number">{{ totalCount }}</div>
+            <div class="stat-label">总记录</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ recentMoments.length }}</div>
+            <div class="stat-label">最近30天</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ moments.length }}</div>
+            <div class="stat-label">当前显示</div>
+          </div>
+        </div>
+
+        <!-- 生活片段列表 -->
+        <div class="tweet-list" v-loading="loading">
+          <div v-if="moments.length === 0" class="empty-state">
+            <el-empty description="暂无生活片段" />
+            <el-button type="primary" @click="showCreateDialog = true">创建第一条生活片段</el-button>
+          </div>
+          
+          <div v-else>
+            <div
+              v-for="moment in moments"
+              :key="moment.id"
+              class="tweet"
+            >
+              <div class="tweet-avatar">
+                <el-avatar :size="48">
+                  <el-icon><User /></el-icon>
+                </el-avatar>
               </div>
               
-              <div v-if="moment.tags.length > 0" class="tweet-tags">
-                <el-tag
-                  v-for="tag in moment.tags"
-                  :key="tag"
-                  size="small"
-                  class="tag-item"
-                  effect="plain"
-                >
-                  #{{ tag }}
-                </el-tag>
+              <div class="tweet-content">
+                <div class="tweet-header">
+                  <div class="tweet-user">
+                    <span class="tweet-name">{{ authStore.user?.email?.split('@')[0] }}</span>
+                    <span class="tweet-username">@{{ authStore.user?.email?.split('@')[0] }}</span>
+                  </div>
+                  <div class="tweet-time">{{ formatDateTime(moment.created_at) }}</div>
+                  <div class="tweet-actions">
+                    <el-dropdown trigger="click">
+                      <el-icon class="more-icon"><MoreFilled /></el-icon>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item @click="editMoment(moment)">
+                            <el-icon><Edit /></el-icon> 编辑
+                          </el-dropdown-item>
+                          <el-dropdown-item @click="deleteMoment(moment.id!)">
+                            <el-icon><Delete /></el-icon> 删除
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </div>
+                
+                <div class="tweet-title">{{ moment.title }}</div>
+                
+                <div class="tweet-text">{{ moment.content }}</div>
+                
+                <!-- 图片展示 -->
+                <div v-if="moment.images.length > 0" class="tweet-images">
+                  <div class="image-grid" :class="'grid-' + moment.images.length">
+                    <div
+                      v-for="(image, index) in moment.images"
+                      :key="index"
+                      class="image-item"
+                    >
+                      <el-image
+                        :src="image"
+                        :preview-src-list="moment.images"
+                        :initial-index="index"
+                        fit="cover"
+                        class="tweet-image"
+                      />
+                      <div class="image-overlay">
+                        <el-button
+                          size="small"
+                          type="danger"
+                          circle
+                          @click="deleteImage(moment.id!, index)"
+                        >
+                          <el-icon><Delete /></el-icon>
+                        </el-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 标签和日期 -->
+                <div class="tweet-meta">
+                  <div class="tweet-date">
+                    <el-icon><Calendar /></el-icon>
+                    {{ formatDate(moment.date) }}
+                  </div>
+                  
+                  <div v-if="moment.tags.length > 0" class="tweet-tags">
+                    <el-tag
+                      v-for="tag in moment.tags"
+                      :key="tag"
+                      size="small"
+                      class="tag-item"
+                      effect="plain"
+                    >
+                      #{{ tag }}
+                    </el-tag>
+                  </div>
+                </div>
+                
+                <!-- 社交互动按钮 -->
+                <social-actions 
+                  :moment="moment" 
+                  @comment="openCommentDialog(moment)" 
+                  @repost="openRepostDialog(moment)" 
+                />
               </div>
             </div>
           </div>
         </div>
+      </div>
+      
+      <!-- 右侧边栏 -->
+      <div class="sidebar w-80">
+        <recommended-users @view-more="showMoreRecommendedUsers" />
       </div>
     </div>
 
@@ -299,6 +315,42 @@
         </span>
       </template>
     </el-dialog>
+    
+    <!-- 评论对话框 -->
+    <el-dialog
+      v-model="showCommentDialog"
+      title="评论"
+      width="500px"
+      v-if="currentMoment"
+    >
+      <div v-if="!currentMoment" class="empty-state">
+        <el-empty description="加载中..." />
+      </div>
+      <social-actions
+        v-else
+        :moment="currentMoment"
+        :show-comment-dialog="true"
+        @close="showCommentDialog = false"
+      />
+    </el-dialog>
+    
+    <!-- 转发对话框 -->
+    <el-dialog
+      v-model="showRepostDialog"
+      title="转发"
+      width="500px"
+      v-if="currentMoment"
+    >
+      <div v-if="!currentMoment" class="empty-state">
+        <el-empty description="加载中..." />
+      </div>
+      <social-actions
+        v-else
+        :moment="currentMoment"
+        :show-repost-dialog="true"
+        @close="showRepostDialog = false"
+      />
+    </el-dialog>
   </div>
 </template>
 
@@ -307,22 +359,18 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox, FormInstance, UploadUserFile } from 'element-plus'
 import { useMomentStore } from '../stores/moment'
 import { useAuthStore } from '../stores/auth'
+import { useProfileStore } from '../stores/profile'
 import type { Moment, CreateMomentRequest, UpdateMomentRequest } from '../types/moment'
 import { Search, Plus, Edit, Delete, Calendar, Setting, User, Picture, PriceTag, MoreFilled } from '@element-plus/icons-vue'
+import { storeToRefs } from 'pinia';
+import SocialActions from '../components/SocialActions.vue'
+import RecommendedUsers from '../components/RecommendedUsers.vue'
 
 // 状态管理
 const momentStore = useMomentStore()
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 const {
-  moments,
-  loading,
-  currentFilter,
-  selectedTags,
-  dateRange,
-  filteredMoments,
-  totalCount,
-  recentMoments,
-  allTags,
   fetchMoments,
   fetchMomentsByDateRange,
   fetchMomentsByTags,
@@ -333,6 +381,33 @@ const {
   setFilter,
   clearFilters: storeClearFilters
 } = momentStore
+const {
+  moments,
+  loading,
+  currentFilter,
+  selectedTags,
+  dateRange,
+  filteredMoments,
+  totalMoments,
+  totalCount,
+  recentMoments,
+  allTags
+} = storeToRefs(momentStore)
+
+// 标签页相关
+const activeTab = ref('for-you')
+const setActiveTab = (tab: string) => {
+  activeTab.value = tab
+  if (tab === 'following') {
+    // 可以在这里添加导航到关注页面的逻辑
+    ElMessage.info('关注功能即将上线')
+  }
+}
+
+// 社交互动相关
+const currentMoment = ref<Moment | null>(null)
+const showCommentDialog = ref(false)
+const showRepostDialog = ref(false)
 
 // 筛选相关
 const showFilterDropdown = ref(false)
@@ -383,7 +458,7 @@ const localDateRange = ref<[string, string] | null>(null)
 // 生命周期钩子
 onMounted(async () => {
   // 强制刷新数据，确保每次组件挂载时都从服务器获取最新数据
-  await fetchMoments(true)
+  await fetchMoments()
 })
 
 // 方法
@@ -493,7 +568,7 @@ const submitForm = async () => {
         }
         
         // 强制刷新数据，确保新创建或更新的内容显示在页面上
-        await fetchMoments(true)
+        await fetchMoments()
         
         showCreateDialog.value = false
         resetForm()
@@ -519,7 +594,7 @@ const confirmDelete = async () => {
   try {
     await storeDeletMoment(momentToDeleteId.value)
     // 强制刷新数据，确保删除后的内容不再显示在页面上
-    await fetchMoments(true)
+    await fetchMoments()
     ElMessage.success('生活片段删除成功')
     showDeleteDialog.value = false
   } catch (error) {
@@ -546,13 +621,30 @@ const deleteImage = async (momentId: string, imageIndex: number) => {
     ElMessage.success('图片删除成功')
     
     // 强制刷新数据，确保删除图片后的内容更新显示在页面上
-    await fetchMoments(true)
+    await fetchMoments()
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除图片失败:', error)
       ElMessage.error(`删除图片失败: ${error instanceof Error ? error.message : '未知错误'}`)
     }
   }
+}
+
+// 打开评论对话框
+const openCommentDialog = (moment: Moment) => {
+  currentMoment.value = moment
+  showCommentDialog.value = true
+}
+
+// 打开转发对话框
+const openRepostDialog = (moment: Moment) => {
+  currentMoment.value = moment
+  showRepostDialog.value = true
+}
+
+// 查看更多推荐用户
+const showMoreRecommendedUsers = () => {
+  ElMessage.info('查看更多推荐用户功能即将上线')
 }
 
 // 标签相关方法
@@ -621,11 +713,16 @@ const handleFileRemove = (uploadFile: UploadUserFile) => {
 
 <style scoped>
 .twitter-container {
-  max-width: 600px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0;
-  border-left: 1px solid #eee;
-  border-right: 1px solid #eee;
+  padding: 0 16px;
+}
+
+/* 侧边栏样式 */
+.sidebar {
+  position: sticky;
+  top: 16px;
+  height: fit-content;
 }
 
 /* 发布区域样式 */

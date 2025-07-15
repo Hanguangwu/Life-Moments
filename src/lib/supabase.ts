@@ -20,7 +20,11 @@ export const TABLES = {
   IDEAS: 'ideas',
   PROFILES: 'profiles',
   ACHIEVEMENTS: 'achievements',
-  MOMENTS: 'moments'
+  MOMENTS: 'moments',
+  LIKES: 'likes',
+  COMMENTS: 'comments',
+  REPOSTS: 'reposts',
+  FOLLOWS: 'follows'
 } as const
 
 /**
@@ -83,6 +87,41 @@ export interface SupabaseMoment {
   images: string[]
   image_timestamps: string[]
   tags: string[]
+  like_count: number
+  comment_count: number
+  repost_count: number
   created_at: string
   updated_at: string
+}
+
+export interface SupabaseLike {
+  id: string
+  user_id: string
+  moment_id: string
+  created_at: string
+}
+
+export interface SupabaseComment {
+  id: string
+  user_id: string
+  moment_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SupabaseRepost {
+  id: string
+  user_id: string
+  moment_id: string
+  content: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SupabaseFollow {
+  id: string
+  follower_id: string
+  following_id: string
+  created_at: string
 }
