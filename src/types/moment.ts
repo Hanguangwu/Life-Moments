@@ -37,6 +37,9 @@ export interface CreateMomentRequest {
   date: string;
   images?: File[]; // 上传的图片文件
   tags?: string[];
+  like_count?: number;
+  comment_count?: number;
+  repost_count?: number;
 }
 
 /**

@@ -584,7 +584,7 @@ export class SupabaseSocialService {
     }
     
     // 统计被推荐次数，作为推荐权重
-    const userCounts = {}
+    const userCounts: Record<string, number> = {}
     recommendedUsers.forEach(item => {
       const userId = item.following_id
       userCounts[userId] = (userCounts[userId] || 0) + 1

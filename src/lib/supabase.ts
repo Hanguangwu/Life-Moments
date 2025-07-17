@@ -63,6 +63,8 @@ export interface SupabaseProfile {
   avatar_url?: string
   created_at: string
   updated_at: string
+  following_count: number
+  follower_count: number
 }
 
 export interface SupabaseAchievement {

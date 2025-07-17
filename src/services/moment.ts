@@ -71,7 +71,10 @@ export class SupabaseMomentService {
         date: request.date,
         images: imageUrls,
         image_timestamps: imageTimestamps,
-        tags: request.tags || []
+        tags: request.tags || [],
+        like_count: request.like_count || 0,
+        comment_count: request.comment_count || 0,
+        repost_count: request.repost_count || 0,
       }
       
       // 插入数据库
@@ -288,7 +291,10 @@ export class SupabaseMomentService {
       image_timestamps: data.image_timestamps,
       tags: data.tags,
       created_at: data.created_at,
-      updated_at: data.updated_at
+      updated_at: data.updated_at,
+      like_count: data.like_count,
+      comment_count: data.comment_count,
+      repost_count: data.repost_count,
     }
   }
 }
